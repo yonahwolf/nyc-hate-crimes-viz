@@ -4,7 +4,10 @@ export interface PropertyCount {
 }
 
 // One row per year; keys are the distinct values of the selected property
-export type YoYRow = { year: string } & Record<string, number>;
+export interface YoYRow {
+  year: string;
+  [key: string]: string | number;
+}
 
 export interface YoYData {
   rows: YoYRow[];
