@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PropertySelector } from './components/PropertySelector';
 import { ModeToggle } from './components/ModeToggle';
+import { ValuePicker } from './components/ValuePicker';
 import { DonutChart } from './components/DonutChart';
 import { ChartLegend } from './components/ChartLegend';
 import { StackedBarChart } from './components/StackedBarChart';
@@ -11,12 +13,21 @@ import { PROPERTY_OPTIONS } from './constants/properties';
 
 const queryClient = new QueryClient();
 
+const DEFAULT_SELECTION_SIZE = 5;
+
 function Dashboard() {
-  const { selectedProperty, mode } = useVisualizationStore();
+  const { selectedProperty, mode, selectedValues, setSelectedValues } = useVisualizationStore();
   const label = PROPERTY_OPTIONS.find((o) => o.key === selectedProperty)?.label ?? selectedProperty;
 
   const distribution = usePropertyCounts(selectedProperty);
   const yoy = useYearOverYear(selectedProperty);
+
+  // When YoY data loads (or property changes), seed the top N values as defaults
+  useEffect(() => {
+    if (yoy.data && selectedValues.length === 0) {
+      setSelectedValues(yoy.data.keys.slice(0, DEFAULT_SELECTION_SIZE));
+    }
+  }, [yoy.data, selectedValues.length, setSelectedValues]);
 
   const isLoading = mode === 'distribution' ? distribution.isLoading : yoy.isLoading;
   const isError = mode === 'distribution' ? distribution.isError : yoy.isError;
@@ -73,7 +84,10 @@ function Dashboard() {
           )}
 
           {mode === 'yoy' && yoy.data && (
-            <StackedBarChart data={yoy.data} />
+            <>
+              <ValuePicker allValues={yoy.data.keys} />
+              <StackedBarChart data={yoy.data} selectedValues={selectedValues} />
+            </>
           )}
         </div>
       </div>
